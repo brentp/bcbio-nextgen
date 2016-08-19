@@ -117,6 +117,8 @@ def run(items):
     paired = vcfutils.get_paired_bams([x["align_bam"] for x in items], items)
     work_dir = _sv_workdir(paired.tumor_data if paired and paired.tumor_data else items[0])
     full_bams, sr_bams, disc_bams = [], [], []
+    # TODO: here we need to check if the cnvkit output is available for this
+    # sample. HOW?
     for data in items:
         dedup_bam, sr_bam, disc_bam = sshared.get_split_discordants(data, work_dir)
         full_bams.append(dedup_bam)

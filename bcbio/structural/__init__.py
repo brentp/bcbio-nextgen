@@ -121,8 +121,30 @@ def run(samples, run_parallel, stage):
                         to_process[(svcaller, b)] = [x]
         else:
             extras.append([data])
+    callers = _get_svcallers(data)
+    # if both lumpy and cnvkit were used, we use the calls from cnvkit as input
+    # into lumpy.
+    lumpy_cnvkit = "lumpy" in callers and "cnvkit" in callers
+    if lumpy_cnvkit and stage == "standard":
+        lumpy_process = [((svcaller, b), v) for (svcaller, b), v in
+                         to_process.items() if svcaller == "lumpy"]
+        to_process = [((svcaller, b), v) for (svcaller, b), v in
+                      to_process.items() if svcaller != "lumpy"]
+
     processed = run_parallel("detect_sv", ([xs, background, xs[0]["config"], stage]
                                            for xs in to_process.values()))
+
+    if lumpy_cnvkit and stage == "standard":
+        # now run cnvanator_to_bedpes.py --cnvkit \
+        #       --del_o=sample-specific-deletion-output \
+        #       --dup_o=sample-specific-dup-output \
+        #       -c sample-cnvkit.cns
+        # then we want to use del_o and dup_o for lumpy...
+        # cnvnantor_to_bedpes.py is no path.
+        pass
+
+
+
     finalized = (run_parallel("finalize_sv", [([xs[0] for xs in processed], processed[0][0]["config"])])
                  if len(processed) > 0 else [])
     return extras + finalized
